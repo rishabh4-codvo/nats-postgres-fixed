@@ -1,0 +1,53 @@
+version: '3.9'
+services:
+  postgres:
+    image: docker.io/debezium/postgres:15
+    platform: linux/amd64
+    ports:
+      - "5432:5432"
+    user: postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: synadia/nats-server:nightly
+    ports:
+      - "4222:4222"
+
+    command:
+      - "--debug"
+      - "--http_port=8222"
+      - "--js"
+  # cassandra:
+  #   image: cassandra:latest
+  #   ports:
+  #     - "9042:9042"
+  #   environment:
+  #     - CASSANDRA_CLUSTER_NAME=MyCluster
+  #     - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+
+  debezium:
+    image: docker.io/debezium/server:2.1.1.Final
+    platform: linux/amd64
+    # build: 
+    #   context: ./debezium-postgres-init
+    volumes:
+      - ./application.properties:/debezium/conf/application.properties
+    depends_on:
+      - postgres
+      - nats
+
+  # app:
+  #   image: ${IMAGE_TAG}
+  #   environment:
+  #     NATS_URL: nats://nats:4222
+  #     PGPASSWORD: postgres
+  #     PGUSER: postgres
+  #   depends_on:
+  #     - debezium
+
